@@ -1,0 +1,12 @@
+youtube-transcript-api
+langchain
+langchain-community
+langchain-huggingface
+langchain-groq
+langchain-text-splitters
+sentence-transformers
+faiss-cpu
+gradio
+python-dotenv
+huggingface_hub
+requests

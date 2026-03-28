@@ -1,0 +1,11 @@
+.env
+cookies.txt
+chat_history.json
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.DS_Store
