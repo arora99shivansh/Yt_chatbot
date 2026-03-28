@@ -186,6 +186,6 @@ with gr.Blocks(title="YouTube RAG Chatbot") as demo:
 if __name__ == "__main__":
     demo.launch(
     server_name="0.0.0.0",   # ← Railway ke liye
-    server_port=int(os.environ.get("PORT", 7860)),
+    server_port=int(os.environ.get("PORT", 10000)),
     theme=gr.themes.Soft()
 )
