@@ -130,7 +130,7 @@ def get_history_display():
 
 
 # ─── UI ────────────────────────────────────────────────────────────────────────
-with gr.Blocks(title="YouTube RAG Chatbot") as demo:
+with gr.Blocks(title="YouTube RAG Chatbot", theme=gr.themes.Soft()) as demo:
 
     gr.HTML("""
     <div style="text-align:center;padding:20px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;margin-bottom:20px;">
@@ -185,7 +185,6 @@ with gr.Blocks(title="YouTube RAG Chatbot") as demo:
 
 if __name__ == "__main__":
     demo.launch(
-    server_name="0.0.0.0",   # ← Railway ke liye
-    server_port=int(os.environ.get("PORT", 10000)),
-    theme=gr.themes.Soft()
-)
+        server_name="0.0.0.0",
+        server_port=int(os.environ.get("PORT", 10000))
+    )
