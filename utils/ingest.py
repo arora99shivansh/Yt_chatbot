@@ -1,32 +1,50 @@
-from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 import re
 import os
 import requests
-from http.cookiejar import MozillaCookieJar
 
 
 def extract_video_id(url):
-    """Extracts the video ID from a standard YouTube URL."""
     match = re.search(r"(?:v=|\/)([0-9A-Za-z_-]{11}).*", url)
     return match.group(1) if match else None
 
 
-def get_ytt_client():
-    """Returns YouTubeTranscriptApi instance with cookies if available."""
-    cookie_file = "cookies.txt"
-    if os.path.exists(cookie_file):
-        try:
-            session = requests.Session()
-            jar = MozillaCookieJar(cookie_file)
-            jar.load(ignore_discard=True, ignore_expires=True)
-            session.cookies = jar
-            return YouTubeTranscriptApi(http_client=session)
-        except Exception:
-            pass
-    return YouTubeTranscriptApi()
+def fetch_transcript(video_id):
+    """Fetch transcript via Supadata API — works on all cloud IPs."""
+    api_key = os.environ.get("SUPADATA_API_KEY")
+    if not api_key:
+        raise Exception("SUPADATA_API_KEY not set in environment.")
+
+    url = f"https://api.supadata.ai/v1/youtube/transcript"
+    headers = {"x-api-key": api_key}
+    params = {"videoId": video_id, "text": True}
+
+    response = requests.get(url, headers=headers, params=params, timeout=30)
+
+    if response.status_code == 200:
+        data = response.json()
+        # Supadata returns either plain text (text=True) or list of chunks
+        if isinstance(data, str):
+            return data
+        elif isinstance(data, dict) and "content" in data:
+            content = data["content"]
+            if isinstance(content, str):
+                return content
+            elif isinstance(content, list):
+                return " ".join([
+                    c["text"] if isinstance(c, dict) else str(c)
+                    for c in content
+                ])
+        elif isinstance(data, list):
+            return " ".join([
+                c["text"] if isinstance(c, dict) else str(c)
+                for c in data
+            ])
+        return str(data)
+    else:
+        raise Exception(f"Supadata API error {response.status_code}: {response.text}")
 
 
 def process_video(url):
@@ -35,17 +53,9 @@ def process_video(url):
         return None, "❌ Invalid YouTube URL."
 
     try:
-        ytt_api = get_ytt_client()
-        transcript_data = ytt_api.fetch(video_id, languages=["en"])
-
-        # Robust extraction: handles both dicts and custom objects
-        transcript = " ".join([
-            chunk["text"] if isinstance(chunk, dict) else getattr(chunk, "text", str(chunk))
-            for chunk in transcript_data
-        ])
-
-    except TranscriptsDisabled:
-        return None, "❌ No captions available for this video."
+        transcript = fetch_transcript(video_id)
+        if not transcript or len(transcript.strip()) < 50:
+            return None, "❌ Transcript is empty or too short."
     except Exception as e:
         return None, f"❌ Could not fetch transcript: {str(e)}"
 
